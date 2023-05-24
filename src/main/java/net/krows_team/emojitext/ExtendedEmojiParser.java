@@ -1,8 +1,5 @@
 package net.krows_team.emojitext;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
@@ -54,12 +51,12 @@ public class ExtendedEmojiParser extends EmojiParser {
 	}
 
 	public static void updateEmojis() {
-		updateEmojisFromFile(new File(FileUtils.getResourcePath("emojis.json")));
+		updateEmojisFromFile(FileUtils.getResource("emojis.json"));
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void updateEmojisFromFile(File file) {
-		try (InputStream stream = new FileInputStream(file)) {
+	public static void updateEmojisFromFile(InputStream in) {
+		try (var stream = in) {
 			openFields();
 
 			var tagMap = (Map<String, Set<Emoji>>) emojisByTagField.get(null);
@@ -77,8 +74,6 @@ public class ExtendedEmojiParser extends EmojiParser {
 			setStaticField(emojiTrieField, new EmojiTrie(emojis));
 			var emojiList = (List<Emoji>) allEmojisField.get(null);
 			Collections.sort(emojiList, (e1, e2) -> e2.getUnicode().length() - e1.getUnicode().length());
-		} catch (FileNotFoundException e) {
-			log.warn("Emoji update file does not exist: {}", file.getAbsolutePath());
 		} catch (IllegalAccessException e) {
 			log.error("Unexpected error occured while using reflection: ", e);
 		} catch (IOException e) {

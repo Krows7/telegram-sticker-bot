@@ -1,6 +1,5 @@
 package net.krows_team.sticker_bot;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -61,8 +60,7 @@ public class StickerBot {
 
 	private void loadProperties() {
 		properties = new Properties();
-		var propFile = FileUtils.getResourceFile("bot.properties");
-		try (var in = new FileInputStream(FileUtils.createPath(propFile).toFile())) {
+		try (var in = FileUtils.getResource("bot.properties")) {
 			getProperties().load(in);
 		} catch (IOException e) {
 			log.error("Unable to Create or Read Properties File", e);
@@ -97,8 +95,7 @@ public class StickerBot {
 		return Optional.ofNullable(System.getenv("bot_token")).orElseThrow(() -> new NullPointerException("Telegram bot token is null"));
 	}
 
-	// TODO
-	private void startHalt() {
+	private void initHalt() {
 		Executors.defaultThreadFactory().newThread(() -> {
 			try {
 				Thread.sleep(10);
@@ -113,22 +110,26 @@ public class StickerBot {
 		api = new TelegramBot(getToken());
 		api.setUpdatesListener(updates -> {
 			var lastID = UpdatesListener.CONFIRMED_UPDATES_NONE;
-			try {
-				for (var u : updates) {
+			for (var u : updates) {
+				try {
 					updateHandler.handle(u);
 					lastID = u.updateId();
 					if (haltSignal != -1) {
-						startHalt();
+						initHalt();
 						return lastID;
 					}
+				} catch (Exception e) {
+					log.error("Error occured while processing request: ", e);
+					log.error("Skipping request {}", u.message().text());
+
+					sendError(u.message(), "Error occurred with request: %s".formatted(u.message().text()));
+
+					if (BotUtils.contains(args, "error-halt")) {
+						log.error("Due to error the bot will shutdown");
+						setHaltSignal(666);
+						initHalt();
+					}
 				}
-			} catch (Exception e) {
-				log.error("Error occured to bot shutdown: ", e);
-				if (BotUtils.contains(args, "error-halt")) {
-					setHaltSignal(666);
-					startHalt();
-				}
-				return lastID;
 			}
 			return UpdatesListener.CONFIRMED_UPDATES_ALL;
 		});

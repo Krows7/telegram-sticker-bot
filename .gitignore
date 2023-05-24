@@ -4,6 +4,9 @@
 
 /target/
 
+logs/*
+
 .project
 .settings/
 .classpath
+/env.list

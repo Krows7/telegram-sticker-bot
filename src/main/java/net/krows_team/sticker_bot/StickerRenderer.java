@@ -26,7 +26,7 @@ import net.krows_team.emojitext.ext.telegram.TelegramEmojiCache;
 @Slf4j
 public class StickerRenderer {
 
-	private static final int MAX_WIDTH = 512;
+	private static final int MAX_WIDTH = 512 + 256 + 8;
 	private static final int BACKGROUND_COLOR = 0x1c2028;
 	private static final int TIME_COLOR = 0x787D87;
 	private static final int AVATAR_DIAMETER = 53;
@@ -90,6 +90,7 @@ public class StickerRenderer {
 		var metrics = textRenderer.getMetrics(g, text, (int) (MAX_WIDTH - MESSAGE_TEXT_X - MAX_TEXT_GAP), data.formats);
 		var timeAdjust = TIME_X + MAX_TEXT_TIME_GAP + metrics.getLastLineWidth() <= MAX_WIDTH - MESSAGE_TEXT_X
 				- (timeMore10 ? TIME_10_OFFSET : 0);
+
 		height = (int) (metrics.getHeight() + MESSAGE_NAME_BASELINE + 14
 				+ (timeAdjust ? TIME_BASELINE / 2.0 : TIME_HEIGHT + TIME_BASELINE));
 
@@ -97,13 +98,10 @@ public class StickerRenderer {
 		var mx = MESSAGE_TEXT_X + TIME_X + (timeMore10 ? TIME_10_OFFSET : 0)
 				+ Math.max(nameWidth + MESSAGE_TEXT_X - MESSAGE_BLOCK_X, metrics.getLastLineWidth() + MAX_TEXT_TIME_GAP);
 
-		log.debug("fixSize1()");
-		log.debug("Message Height: {}", metrics.getHeight());
-		log.debug("Time Adjust: {}", timeAdjust);
-		log.debug("Last line width: {}", metrics.getLastLineWidth());
-		log.debug("Max Width: {}", mx);
+		width = (int) Math.max(mx, MESSAGE_TEXT_X + MAX_TEXT_GAP + metrics.getMaxWidth() + 1);
 
-		if (timeAdjust) width = (int) Math.min(MAX_WIDTH, mx);
+		log.debug("Render Bounds: ({}, {})", width, height);
+		log.debug("Time Adjust: {}; Last line width: {}", timeAdjust, metrics.getLastLineWidth());
 	}
 
 	private BufferedImage createImage() {

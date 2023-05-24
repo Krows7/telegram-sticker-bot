@@ -27,12 +27,12 @@ public class TextRenderer {
 		private int lineCount;
 		private float lastLineWidth;
 		private float height;
+		private float maxWidth;
 	}
 
 	private EmojiCache cache;
 
-	// TODO
-	private Entry<TextAttribute, Object> get(MessageEntity entity) {
+	private Entry<TextAttribute, Object> getTextAttribute(MessageEntity entity) {
 		TextAttribute key = null;
 		Object value = null;
 		switch (entity.type()) {
@@ -51,7 +51,7 @@ public class TextRenderer {
 		default -> {
 		}
 		}
-		return key == null ? null : new AbstractMap.SimpleEntry<>(key, value);
+		return new AbstractMap.SimpleEntry<>(key, value);
 	}
 
 	private Entry<TextLayout, Boolean> nextLayout(String text, LineBreakMeasurer measurer, int width, boolean requireNextWord) {
@@ -67,6 +67,7 @@ public class TextRenderer {
 				}
 			}
 		}
+
 		return new AbstractMap.SimpleEntry<>(measurer.nextLayout(width, limit, requireNextWord), found);
 	}
 
@@ -75,7 +76,8 @@ public class TextRenderer {
 		TextLayout layout = null;
 		var nodes = ExtendedEmojiParser.parseToNodes(text);
 
-		log.debug("getBounds {}", width);
+		log.debug("Processing Message");
+		log.debug("Max Width: {}", width);
 		log.debug("Font Height: {}", g.getFontMetrics().getHeight());
 		log.debug("Total Nodes: {}", nodes.size());
 
@@ -84,15 +86,16 @@ public class TextRenderer {
 
 		float heightUnit = g.getFontMetrics().getHeight();
 		var height = heightUnit;
+		var maxWidth = 0;
 
 		for (Node node : nodes) {
 			log.debug("Node: {}", node);
 			var nodeWidth = node.getWidth(g);
 			if (node instanceof EmojiNode emojiNode) {
 				if (nodeWidth > width - currentLineWidth) {
-					log.debug("EmojiNode width: {}; Left space: {}", nodeWidth, width - currentLineWidth);
 					height += heightUnit;
 					lineCount++;
+					maxWidth = Math.max(maxWidth, currentLineWidth);
 					currentLineWidth = 0;
 				}
 				if (emojiAction != null) emojiAction.accept(emojiNode, new Point2D.Float(currentLineWidth + x, height + y));
@@ -103,8 +106,8 @@ public class TextRenderer {
 				nodeText.addAttribute(TextAttribute.FONT, g.getFont());
 				if (formats != null) {
 					for (var entity : formats) {
-						var pairEntry = get(entity);
-						if (pairEntry != null) nodeText.addAttribute(pairEntry.getKey(), pairEntry.getValue(), entity.offset(),
+						var pairEntry = getTextAttribute(entity);
+						if (pairEntry.getKey() != null) nodeText.addAttribute(pairEntry.getKey(), pairEntry.getValue(), entity.offset(),
 								entity.offset() + entity.length());
 					}
 				}
@@ -121,16 +124,19 @@ public class TextRenderer {
 					var entry = nextLayout(text, lineMeasurer, width - currentLineWidth, !previousNull);
 					layout = entry.getKey();
 					boolean isNewLine = entry.getValue();
-					if (layout != null && log.isDebugEnabled())
+					if (layout != null) {
 						log.debug("Next Node line: [{}]", text.substring(previousLineEnd, lineMeasurer.getPosition()));
-					if (layout == null || (nodeWidth = layout.getBounds().getBounds().width) > width - currentLineWidth) {
+						log.debug("Node width: {}; Remaining: {}", layout.getBounds().getBounds().width, width - currentLineWidth);
+					}
+					if (layout == null || (nodeWidth = layout.getBounds().getBounds().width) >= width - currentLineWidth) {
+						log.debug("New Line");
 						lineCount++;
 						height += heightUnit;
+						maxWidth = Math.max(maxWidth, currentLineWidth);
 						currentLineWidth = 0;
 					}
 					previousLineEnd = lineMeasurer.getPosition();
 					if (layout != null) {
-						log.debug("Layout Height: {}", layout.getAscent() + layout.getDescent() + layout.getLeading());
 						if (textAction != null) textAction.accept(layout, new Point2D.Float(currentLineWidth + x, height + y));
 						currentLineWidth += nodeWidth + 1;
 					}
@@ -139,12 +145,13 @@ public class TextRenderer {
 						log.debug("New Line");
 						lineCount++;
 						height += heightUnit;
+						maxWidth = Math.max(maxWidth, currentLineWidth);
 						currentLineWidth = 0;
 					}
 				}
 			}
 		}
-		return new TextMetrics(lineCount, currentLineWidth, height);
+		return new TextMetrics(lineCount, currentLineWidth, height, maxWidth);
 	}
 
 	public void renderText(Graphics2D g, String text, int x, int y, int width, MessageEntity[] formats) {

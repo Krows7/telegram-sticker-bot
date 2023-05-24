@@ -1,0 +1,36 @@
+<configuration>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+        <level>INFO</level>
+    </filter>
+  </appender>
+  
+  <appender name="LATEST_FILE" class="ch.qos.logback.core.FileAppender">
+    <file>logs/latest.log</file>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+        <level>INFO</level>
+    </filter>
+  </appender>
+  
+  <timestamp key="timestamp" datePattern="yyyy-MM-dd HH-mm-ss.SSS"/>
+  
+  <appender name="DEBUG_FILE" class="ch.qos.logback.core.FileAppender">
+  	<file>logs/${timestamp}.log</file>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+  
+  <root level="DEBUG">
+	  <appender-ref ref="LATEST_FILE"/>
+	  <appender-ref ref="CONSOLE"/>
+	  <appender-ref ref="DEBUG_FILE"/>
+  </root>
+</configuration>
+

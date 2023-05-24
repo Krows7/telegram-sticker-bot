@@ -1,9 +1,6 @@
 package net.krows_team.sticker_bot.execution;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.stream.Collectors;
 
 import com.pengrad.telegrambot.model.Message;
@@ -26,9 +23,9 @@ public class HelpCommand extends Command {
 
 	@Override
 	public void execute(Message msg, String... args) {
-		var path = new File(FileUtils.getResourcePath("help.md")).toPath();
-		try (var stream = Files.lines(path, StandardCharsets.UTF_8)) {
-			var send = new SendMessage(msg.chat().id(), stream.collect(Collectors.joining(System.lineSeparator())));
+		try {
+			var lines = FileUtils.readAllLines("help.md");
+			var send = new SendMessage(msg.chat().id(), lines.stream().collect(Collectors.joining(System.lineSeparator())));
 			send.parseMode(ParseMode.Markdown);
 			StickerBot.getInstance().sendMessage(send);
 		} catch (IOException e) {

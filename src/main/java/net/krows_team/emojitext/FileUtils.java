@@ -1,24 +1,21 @@
 package net.krows_team.emojitext;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class FileUtils {
 
-	public String getResourcePath(String file) {
-		return "src/main/resources/" + file;
-	}
-
-	public String getTestResourcePath(String file) {
-		return "src/test/resources/" + file;
-	}
-
-	public Path getResourceFile(String fileString) {
-		return Path.of(getResourcePath(fileString));
+	public InputStream getResource(String file) {
+		return FileUtils.class.getResourceAsStream("/" + file);
 	}
 
 	public Path createPath(Path path) throws IOException {
@@ -28,5 +25,11 @@ public class FileUtils {
 
 	public File getOutputFile(String file) {
 		return new File("out/" + file);
+	}
+
+	public List<String> readAllLines(String file) throws IOException {
+		try (var in = new BufferedReader(new InputStreamReader(getResource(file), StandardCharsets.UTF_8))) {
+			return in.lines().toList();
+		}
 	}
 }

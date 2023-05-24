@@ -21,10 +21,10 @@ public class UpdateHandler {
 		var msg = upd.message();
 		if (msg == null) return;
 
-		log.debug(msg.toString());
-		log.debug("Entities: {}", Arrays.toString(msg.entities()));
-		if (msg.entities() != null)
-			log.debug(HtmlRenderer.builder().build().render(Parser.builder().build().parse(TelegramMessageParser.parseMessage(msg))));
+		log.info("Request: {}", msg.toString());
+		log.debug("Reuqest Entities: {}", Arrays.toString(msg.entities()));
+		if (msg.entities() != null) log.debug("Parsed Message Text: {}",
+				HtmlRenderer.builder().build().render(Parser.builder().build().parse(TelegramMessageParser.parseMessage(msg))));
 
 		if (msg.text() == null) return;
 

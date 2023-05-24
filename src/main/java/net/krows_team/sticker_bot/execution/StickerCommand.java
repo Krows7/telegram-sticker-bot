@@ -81,7 +81,14 @@ public class StickerCommand extends CompoundCommand {
 		protected void execute(String... args) {
 			if (!requireNoArgs(msg, args)) return;
 			if (msg.replyToMessage() == null) StickerBot.getInstance().sendError(msg.from().id(), "There's no reply message");
-			else StickerBot.getInstance().getApi().execute(new SendSticker(msg.chat().id(), receiveStickerBytes(msg)));
+			else {
+				var text = msg.replyToMessage().text();
+				if (text == null || text.isEmpty()) {
+					StickerBot.getInstance().sendError(msg.chat().id(), "There's an empty message");
+					return;
+				}
+				StickerBot.getInstance().getApi().execute(new SendSticker(msg.chat().id(), receiveStickerBytes(msg)));
+			}
 		}
 
 		@Override
@@ -109,6 +116,11 @@ public class StickerCommand extends CompoundCommand {
 			var bot = StickerBot.getInstance();
 			if (args.length > 1) {
 				bot.sendError(msg.chat().id(), "Too much arguments");
+				return;
+			}
+			var text = msg.replyToMessage().text();
+			if (text == null || text.isEmpty()) {
+				bot.sendError(msg.chat().id(), "There's an empty message");
 				return;
 			}
 			var emoji = args.length == 0 ? "🤔" : args[0];
